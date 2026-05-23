@@ -4,14 +4,17 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, User, Mail, MapPin, FileText, ExternalLink } from "lucide-react"
+import { CheckCircle, XCircle, Clock, User, Mail, MapPin, FileText, ExternalLink, Database, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { ProfileService } from "@/modules/domain/profile/ProfileService"
 import { UserProfile } from "@/modules/infraestructura/firebase/ProfileRepository"
+import { getAuth } from "firebase/auth"
+import { seedActivities } from "@/lib/seedActivities"
 
 export function AdminVerificationPanel() {
   const [pendingProfiles, setPendingProfiles] = useState<UserProfile[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSeeding, setIsSeeding] = useState(false)
 
   // Cargar perfiles pendientes
   useEffect(() => {
@@ -30,6 +33,30 @@ export function AdminVerificationPanel() {
 
     loadPendingProfiles()
   }, [])
+
+  const handleSeed = async () => {
+    const auth = getAuth()
+    const currentUser = auth.currentUser
+    if (!currentUser) {
+      toast.error("Debes estar autenticado para sembrar datos")
+      return
+    }
+    setIsSeeding(true)
+    try {
+      const { created, errors } = await seedActivities(currentUser.uid)
+      if (errors.length === 0) {
+        toast.success(`${created} actividades creadas exitosamente`)
+      } else {
+        toast.warning(`${created} creadas, ${errors.length} errores`)
+        errors.forEach(e => console.error(e))
+      }
+    } catch (err) {
+      toast.error("Error al sembrar actividades")
+      console.error(err)
+    } finally {
+      setIsSeeding(false)
+    }
+  }
 
   const handleVerification = async (userId: string, status: 'approved' | 'rejected') => {
     try {
@@ -74,6 +101,33 @@ export function AdminVerificationPanel() {
             Todos los perfiles han sido procesados.
           </p>
         </div>
+
+        <Card className="border-dashed border-2 border-muted-foreground/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Database className="h-5 w-5" />
+              Datos de Prueba
+            </CardTitle>
+            <CardDescription>
+              Crea 20 actividades de ejemplo (5 por categoría) con ubicaciones reales de Medellín.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleSeed} disabled={isSeeding} variant="outline">
+              {isSeeding ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creando actividades...
+                </>
+              ) : (
+                <>
+                  <Database className="h-4 w-4 mr-2" />
+                  Sembrar 20 actividades
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -89,6 +143,35 @@ export function AdminVerificationPanel() {
           {pendingProfiles.length} solicitudes pendientes
         </Badge>
       </div>
+
+      {/* Herramienta de datos de prueba */}
+      <Card className="border-dashed border-2 border-muted-foreground/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Database className="h-5 w-5" />
+            Datos de Prueba
+          </CardTitle>
+          <CardDescription>
+            Crea 20 actividades de ejemplo (5 por categoría) con ubicaciones reales de Medellín.
+            Útil para poblar el mapa y probar la plataforma.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={handleSeed} disabled={isSeeding} variant="outline">
+            {isSeeding ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creando actividades...
+              </>
+            ) : (
+              <>
+                <Database className="h-4 w-4 mr-2" />
+                Sembrar 20 actividades
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {pendingProfiles.map((profile) => (

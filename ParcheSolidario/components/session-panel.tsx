@@ -14,6 +14,7 @@ import { AddActivityForm } from "@/components/add-activity-form"
 import { EventPublications } from "@/components/event-publications"
 import { RecentActivities } from "@/components/recent-activities"
 import { CategoryActivities } from "@/components/category-activities"
+import { AdminVerificationPanel } from "@/components/admin-verification-panel"
 import { ActivitiesProvider } from "@/contexts/ActivitiesContext"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -188,6 +189,16 @@ interface SessionPanelProps {
                     }`}
                   >
                     Mi Perfil
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("admin")}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      activeSection === "admin"
+                        ? "bg-white text-primary font-medium"
+                        : "text-primary-foreground hover:bg-white/10"
+                    }`}
+                  >
+                    Admin
                   </button>
                 </nav>
               </div>
@@ -413,6 +424,12 @@ interface SessionPanelProps {
                 <EventPublications />
               </div>
             </ActivitiesProvider>
+          )}
+
+          {activeSection === "admin" && (
+            <div className="w-full">
+              <AdminVerificationPanel />
+            </div>
           )}
         </main>
       </div>
